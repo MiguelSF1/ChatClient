@@ -99,7 +99,10 @@ public class ChatClient {
     public void run() throws IOException {
         // PREENCHER AQUI
        socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
        socketChannel.connect(new InetSocketAddress(server, port));
+        while(!socketChannel.finishConnect()){
+        }
 
        while (true) {
            receiveBuffer.clear();
