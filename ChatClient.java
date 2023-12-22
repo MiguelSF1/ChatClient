@@ -1,5 +1,8 @@
 import java.io.*;
 import java.net.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.nio.charset.*;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,6 +20,13 @@ public class ChatClient {
     // Se for necessário adicionar variáveis ao objecto ChatClient, devem
     // ser colocadas aqui
 
+    private final String server;
+    private final int port;
+    private final ByteBuffer receiveBuffer = ByteBuffer.allocate(16384);
+    private final ByteBuffer sendBuffer = ByteBuffer.allocate(16384);
+    private SocketChannel socketChannel;
+    private final Charset charset = StandardCharsets.UTF_8;
+    private final CharsetDecoder charsetDecoder = charset.newDecoder();
 
 
     
@@ -63,7 +73,8 @@ public class ChatClient {
         // Se for necessário adicionar código de inicialização ao
         // construtor, deve ser colocado aqui
 
-
+        this.server = server;
+        this.port = port;
 
     }
 
@@ -72,6 +83,12 @@ public class ChatClient {
     // na caixa de entrada
     public void newMessage(String message) throws IOException {
         // PREENCHER AQUI com código que envia a mensagem ao servidor
+        sendBuffer.clear();
+        sendBuffer.put(charset.encode(message));
+        sendBuffer.flip();
+        while (sendBuffer.hasRemaining()) {
+            socketChannel.write(sendBuffer);
+        }
 
 
 
@@ -81,7 +98,18 @@ public class ChatClient {
     // Método principal do objecto
     public void run() throws IOException {
         // PREENCHER AQUI
+       socketChannel = SocketChannel.open();
+       socketChannel.connect(new InetSocketAddress(server, port));
 
+       while (true) {
+           receiveBuffer.clear();
+           socketChannel.read(receiveBuffer);
+           receiveBuffer.flip();
+           if (receiveBuffer.limit() != 0) {
+               String message = charsetDecoder.decode(receiveBuffer).toString();
+               printMessage(message);
+           }
+       }
 
 
     }
