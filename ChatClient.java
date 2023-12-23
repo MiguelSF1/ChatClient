@@ -57,6 +57,14 @@ public class ChatClient {
     }
 
     public void newMessage(String message) throws IOException {
+        if (!message.isEmpty()) {
+            String[] args = message.replace("\n", "").replace("\r", "").split(" ");
+            if (message.charAt(0) == '/') {
+                if (!args[0].equals("/nick") && !args[0].equals("/join") && !args[0].equals("/leave") && !args[0].equals("/bye") && !args[0].equals("/priv")) {
+                    message = "/" + message;
+                }
+            }
+        }
         sendBuffer.clear();
         sendBuffer.put(charset.encode(message));
         sendBuffer.flip();
