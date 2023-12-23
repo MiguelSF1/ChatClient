@@ -58,7 +58,7 @@ public class ChatClient {
 
     public void newMessage(String message) throws IOException {
         if (!message.isEmpty()) {
-            String[] args = message.replace("\n", "").replace("\r", "").split(" ");
+            String[] args = message.split(" ");
             if (message.charAt(0) == '/') {
                 if (!args[0].equals("/nick") && !args[0].equals("/join") && !args[0].equals("/leave") && !args[0].equals("/bye") && !args[0].equals("/priv")) {
                     message = "/" + message;
@@ -76,37 +76,56 @@ public class ChatClient {
     public void run() throws IOException {
         socketChannel = SocketChannel.open();
         socketChannel.connect(new InetSocketAddress(server, port));
+        Receiver receiver = new Receiver();
+        receiver.run();
+    }
 
-        while (true) {
-            receiveBuffer.clear();
-            socketChannel.read(receiveBuffer);
-            receiveBuffer.flip();
-            if (receiveBuffer.limit() != 0) {
-                String message = charsetDecoder.decode(receiveBuffer).toString();
-                String[] args = message.split(" ");
-                String messageType = args[0];
-                String friendlyMessage;
-                if (messageType.equals("OK\n")) {
-                    friendlyMessage = "Sucesso!\n";
-                } else if (messageType.equals("ERROR\n")) {
-                    friendlyMessage = "Erro!\n";
-                } else if (messageType.equals("MESSAGE")) {
-                    int messageStartIndex = messageType.length() + args[1].length() + 2;
-                    friendlyMessage = args[1] + ": " + message.substring(messageStartIndex);
-                } else if (messageType.equals("NEWNICK")) {
-                    friendlyMessage = args[1] + " mudou de nome para " + args[2];
-                } else if (messageType.equals("JOINED")) {
-                    friendlyMessage = args[1].replace("\n", "") + " juntou se a sala\n";
-                } else if (messageType.equals("LEFT")) {
-                    friendlyMessage = args[1].replace("\n", "") + " deixou a sala\n";
-                } else if (messageType.equals("PRIVATE")) {
-                    int messageStartIndex = messageType.length() + args[1].length() + 2;
-                    friendlyMessage = "Mensagem privada de " + args[1] + ": " + message.substring(messageStartIndex);
-                } else {
-                    friendlyMessage = "Xau!\n";
+    class Receiver implements Runnable {
+        Receiver() {
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                receiveBuffer.clear();
+                try {
+                    socketChannel.read(receiveBuffer);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
+                receiveBuffer.flip();
+                if (receiveBuffer.limit() != 0) {
+                    String message = null;
+                    try {
+                        message = charsetDecoder.decode(receiveBuffer).toString();
+                    } catch (CharacterCodingException e) {
+                        throw new RuntimeException(e);
+                    }
+                    String[] args = message.split(" ");
+                    String messageType = args[0];
+                    String friendlyMessage;
+                    if (messageType.equals("OK\n")) {
+                        friendlyMessage = "Sucesso!\n";
+                    } else if (messageType.equals("ERROR\n")) {
+                        friendlyMessage = "Erro!\n";
+                    } else if (messageType.equals("MESSAGE")) {
+                        int messageStartIndex = messageType.length() + args[1].length() + 2;
+                        friendlyMessage = args[1] + ": " + message.substring(messageStartIndex);
+                    } else if (messageType.equals("NEWNICK")) {
+                        friendlyMessage = args[1] + " mudou de nome para " + args[2];
+                    } else if (messageType.equals("JOINED")) {
+                        friendlyMessage = args[1].replace("\n", "") + " juntou se a sala\n";
+                    } else if (messageType.equals("LEFT")) {
+                        friendlyMessage = args[1].replace("\n", "") + " deixou a sala\n";
+                    } else if (messageType.equals("PRIVATE")) {
+                        int messageStartIndex = messageType.length() + args[1].length() + 2;
+                        friendlyMessage = "Mensagem privada de " + args[1] + ": " + message.substring(messageStartIndex);
+                    } else {
+                        friendlyMessage = "Xau!\n";
+                    }
 
-                printMessage(friendlyMessage);
+                    printMessage(friendlyMessage);
+                }
             }
         }
     }
