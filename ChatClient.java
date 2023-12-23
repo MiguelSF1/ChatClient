@@ -110,7 +110,30 @@ public class ChatClient {
            receiveBuffer.flip();
            if (receiveBuffer.limit() != 0) {
                String message = charsetDecoder.decode(receiveBuffer).toString();
-               printMessage(message);
+               String messageType = message.split(" ")[0];
+               String friendlyMessage = " ";
+               if (messageType.equals("OK\n")) {
+                    friendlyMessage = "Sucesso!\n";
+               } else if (messageType.equals("ERROR\n")) {
+                    friendlyMessage = "Erro!\n";
+               } else if (messageType.equals("MESSAGE")) {
+                   int messageStartIndex = messageType.length() + 2 + message.split(" ")[1].length();
+                    String newMessage = message.substring(messageStartIndex);
+                    friendlyMessage = message.split(" ")[1] + ": " + newMessage ;
+               } else if (messageType.equals("NEWNICK")) {
+                    friendlyMessage = message.split(" ")[1] + " mudou de nome para " + message.split(" ")[2];
+               } else if (messageType.equals("JOINED")) {
+                    friendlyMessage = message.split(" ")[1].replace("\n", "") + " juntou se a sala\n";
+               } else if (messageType.equals("LEFT")) {
+                    friendlyMessage = message.split(" ")[1].replace("\n", "") + " deixou a sala\n";
+               } else if (messageType.equals("PRIVATE")) {
+                   int messageStartIndex = messageType.length() + 2 + message.split(" ")[1].length();
+                   friendlyMessage = "Mensagem privada de " + message.split(" ")[1] + ": " + message.substring(messageStartIndex);
+               } else {
+                    friendlyMessage = "Xau!\n";
+               }
+
+               printMessage(friendlyMessage);
            }
        }
 
