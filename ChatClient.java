@@ -66,7 +66,7 @@ public class ChatClient {
             }
         }
         sendBuffer.clear();
-        sendBuffer.put(charset.encode(message));
+        sendBuffer.put(charset.encode(message + "\n"));
         sendBuffer.flip();
         while (sendBuffer.hasRemaining()) {
             socketChannel.write(sendBuffer);
@@ -75,11 +75,7 @@ public class ChatClient {
 
     public void run() throws IOException {
         socketChannel = SocketChannel.open();
-        socketChannel.configureBlocking(false);
         socketChannel.connect(new InetSocketAddress(server, port));
-        while (!socketChannel.finishConnect()) {
-
-        }
 
         while (true) {
             receiveBuffer.clear();
